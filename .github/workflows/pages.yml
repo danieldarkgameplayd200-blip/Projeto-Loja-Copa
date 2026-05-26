@@ -1,4 +1,4 @@
-name: Publicar site no GitHub Pages
+name: Publicar Ghost Shop no GitHub Pages
 
 on:
   push:
@@ -22,16 +22,22 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Baixar arquivos do repositório
+      - name: Baixar arquivos do repositorio
         uses: actions/checkout@v4
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Preparar arquivos estáticos
-        uses: actions/upload-pages-artifact@v3
+      - name: Separar arquivos do site
+        shell: bash
+        run: |
+          mkdir _site
+          cp -r assets img index.html cadastro.html menu1.html menu2.html menu3.html styles.css script.js .nojekyll _site/
+
+      - name: Enviar arquivos estaticos
+        uses: actions/upload-pages-artifact@v4
         with:
-          path: .
+          path: _site
 
       - name: Publicar no Pages
         id: deployment
