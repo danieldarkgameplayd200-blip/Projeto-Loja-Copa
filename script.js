@@ -519,42 +519,104 @@ function buildPayPalDescription(summary) {
   return `Ghost Shop - ${summary.totalItems} item(ns): ${names}${extra}`;
 }
 
-function buildCheckoutMessage(summary) {
-  const lines = summary.items.map((item) => (
-    `- ${item.quantity}x ${item.product.name} (${formatCurrency(item.product.price)} cada)`
-  ));
-
-  return [
-    "Ola! Quero finalizar meu pedido na Ghost Shop.",
-    "",
-    ...lines,
-    "",
-    `Total: ${formatCurrency(summary.totalPrice)}`
-  ].join("\n");
+function getPayPalItems(summary) {
+  return summary.items.map((item) => ({
+    name: item.product.name.slice(0, 127),
+    sku: `GS-${item.product.id}`,
+    quantity: String(item.quantity),
+    category: "PHYSICAL_GOODS",
+    unit_amount: {
+      currency_code: PAYPAL_CHECKOUT_CURRENCY,
+      value: item.product.price.toFixed(2)
+    }
+  }));
 }
 
-function openContactCheckout(summary) {
-  const container = document.querySelector("#paypal-button-container");
-  if (container) {
-    container.innerHTML = "";
-    container.classList.add("d-none");
-  }
+function buildPayPalPurchaseUnit(summary) {
+  const totalValue = summary.totalPrice.toFixed(2);
 
-  const message = buildCheckoutMessage(summary);
-  const whatsappUrl = `https://wa.me/${CONTACT_WHATSAPP}?text=${encodeURIComponent(message)}`;
-  window.open(whatsappUrl, "_blank", "noopener");
-  setPayPalStatus(`Pedido pronto. Abrimos o WhatsApp da Ghost Shop para concluir o pagamento. Se preferir, envie o pedido para ${CONTACT_EMAIL}.`, "success");
+  return {
+    reference_id: `GHOST-${Date.now()}`,
+    description: buildPayPalDescription(summary).slice(0, 127),
+    custom_id: `ghost-shop-${summary.totalItems}-itens`,
+    amount: {
+      currency_code: PAYPAL_CHECKOUT_CURRENCY,
+      value: totalValue,
+      breakdown: {
+        item_total: {
+          currency_code: PAYPAL_CHECKOUT_CURRENCY,
+          value: totalValue
+        }
+      }
+    },
+    items: getPayPalItems(summary)
+  };
 }
 
 function setupCheckoutMode() {
   const button = document.querySelector("#paypalButton");
-  if (!button || canUseLocalPayPalBackend()) return;
+  if (!button) return;
 
   button.innerHTML = `
-    <i data-lucide="send" aria-hidden="true"></i>
-    Finalizar pedido
+    <i data-lucide="credit-card" aria-hidden="true"></i>
+    Pagar com PayPal
   `;
-  button.setAttribute("aria-label", "Finalizar pedido com a Ghost Shop");
+  button.setAttribute("aria-label", "Pagar com PayPal");
+}
+
+function createPayPalOrder(summary, actions) {
+  setPayPalStatus("Enviando pedido ao PayPal com produtos, quantidades e total.");
+
+  if (!canUseLocalPayPalBackend()) {
+    return actions.order.create({
+      purchase_units: [buildPayPalPurchaseUnit(summary)]
+    });
+  }
+
+  return fetch(`${PAYPAL_API_BASE}/create-order.php`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      value: summary.totalPrice.toFixed(2),
+      currency: PAYPAL_CHECKOUT_CURRENCY,
+      description: buildPayPalDescription(summary),
+      items: getPayPalItems(summary)
+    })
+  })
+    .then(parsePayPalApiResponse)
+    .then((order) => {
+      if (!order.id) {
+        throw new Error("A API local nao retornou o ID do pedido.");
+      }
+
+      return order.id;
+    });
+}
+
+function capturePayPalOrder(data, actions) {
+  setPayPalStatus("Pagamento aprovado. Confirmando no PayPal...");
+
+  if (!canUseLocalPayPalBackend()) {
+    return actions.order.capture();
+  }
+
+  return fetch(`${PAYPAL_API_BASE}/capture-order.php`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      orderID: data.orderID
+    })
+  }).then(parsePayPalApiResponse);
+}
+
+function finishApprovedPayment(details) {
+  const payerName = details.payer?.name?.given_name || "cliente";
+  setPayPalStatus(`Pagamento concluido com sucesso. Obrigado, ${payerName}!`, "success");
+  saveCart([]);
 }
 
 function renderPayPalButtons() {
@@ -571,54 +633,22 @@ function renderPayPalButtons() {
       label: "paypal"
     },
 
-    createOrder() {
+    createOrder(data, actions) {
       const summary = getCartSummary();
       if (summary.totalItems === 0) {
         throw new Error("Carrinho vazio.");
       }
 
-      setPayPalStatus("Criando pedido no PayPal...");
-
-      return fetch(`${PAYPAL_API_BASE}/create-order.php`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          value: summary.totalPrice.toFixed(2),
-          currency: PAYPAL_CHECKOUT_CURRENCY,
-          description: buildPayPalDescription(summary)
-        })
-      })
-        .then(parsePayPalApiResponse)
-        .then((order) => {
-          if (!order.id) {
-            throw new Error("A API local não retornou o ID do pedido.");
-          }
-
+      return createPayPalOrder(summary, actions)
+        .then((orderId) => {
           setPayPalStatus("Pedido criado. Finalize o pagamento na janela do PayPal.");
-          return order.id;
+          return orderId;
         });
     },
 
-    onApprove(data) {
-      setPayPalStatus("Pagamento aprovado. Capturando a transação...");
-
-      return fetch(`${PAYPAL_API_BASE}/capture-order.php`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          orderID: data.orderID
-        })
-      })
-        .then(parsePayPalApiResponse)
-        .then((details) => {
-          const payerName = details.payer?.name?.given_name || "cliente";
-          setPayPalStatus(`Pagamento concluído com sucesso. Obrigado, ${payerName}!`, "success");
-          saveCart([]);
-        });
+    onApprove(data, actions) {
+      return capturePayPalOrder(data, actions)
+        .then(finishApprovedPayment);
     },
 
     onCancel(data) {
@@ -627,7 +657,7 @@ function renderPayPalButtons() {
 
     onError(error) {
       console.error("Erro no pagamento PayPal:", error);
-      setPayPalStatus("Ocorreu um problema no pagamento. Verifique se o XAMPP esta ativo e tente novamente.", "error");
+      setPayPalStatus("Ocorreu um problema no pagamento. Confira o PayPal e tente novamente.", "error");
     }
   }).render("#paypal-button-container")
     .then(() => {
@@ -646,13 +676,8 @@ function handleCheckout() {
     return;
   }
 
-  if (!canUseLocalPayPalBackend()) {
-    openContactCheckout(summary);
-    return;
-  }
-
   container.classList.remove("d-none");
-  setPayPalStatus(`Total enviado ao PayPal: ${formatCurrency(summary.totalPrice)}.`);
+  setPayPalStatus(`Total enviado ao PayPal: ${formatCurrency(summary.totalPrice)}. O resumo dos itens seguira junto com o pedido.`);
 
   if (paypalButtonsRendered) {
     return;
@@ -662,7 +687,7 @@ function handleCheckout() {
     .then(renderPayPalButtons)
     .catch((error) => {
       console.error("Erro ao carregar PayPal:", error);
-      setPayPalStatus("Nao foi possivel carregar o PayPal. Verifique se o XAMPP esta ativo e tente novamente.", "error");
+      setPayPalStatus("Nao foi possivel carregar o PayPal. Confira o Client ID e tente novamente.", "error");
     });
 }
 
