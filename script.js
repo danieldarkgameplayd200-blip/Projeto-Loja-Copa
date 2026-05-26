@@ -447,8 +447,12 @@ function openProductModal(productId) {
 }
 
 let paypalButtonsRendered = false;
-const PAYPAL_API_BASE = "../paypal/api";
-const PAYPAL_CHECKOUT_CURRENCY = "BRL";
+const PAYPAL_API_BASE = "paypal/api";
+const PAYPAL_CHECKOUT_CURRENCY = window.paypalSettings?.currency || "BRL";
+
+function canUseLocalPayPalBackend() {
+  return ["localhost", "127.0.0.1"].includes(window.location.hostname);
+}
 
 function getCartSummary() {
   const items = getCart()
@@ -515,6 +519,44 @@ function buildPayPalDescription(summary) {
   return `Ghost Shop - ${summary.totalItems} item(ns): ${names}${extra}`;
 }
 
+function buildCheckoutMessage(summary) {
+  const lines = summary.items.map((item) => (
+    `- ${item.quantity}x ${item.product.name} (${formatCurrency(item.product.price)} cada)`
+  ));
+
+  return [
+    "Ola! Quero finalizar meu pedido na Ghost Shop.",
+    "",
+    ...lines,
+    "",
+    `Total: ${formatCurrency(summary.totalPrice)}`
+  ].join("\n");
+}
+
+function openContactCheckout(summary) {
+  const container = document.querySelector("#paypal-button-container");
+  if (container) {
+    container.innerHTML = "";
+    container.classList.add("d-none");
+  }
+
+  const message = buildCheckoutMessage(summary);
+  const whatsappUrl = `https://wa.me/${CONTACT_WHATSAPP}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, "_blank", "noopener");
+  setPayPalStatus(`Pedido pronto. Abrimos o WhatsApp da Ghost Shop para concluir o pagamento. Se preferir, envie o pedido para ${CONTACT_EMAIL}.`, "success");
+}
+
+function setupCheckoutMode() {
+  const button = document.querySelector("#paypalButton");
+  if (!button || canUseLocalPayPalBackend()) return;
+
+  button.innerHTML = `
+    <i data-lucide="send" aria-hidden="true"></i>
+    Finalizar pedido
+  `;
+  button.setAttribute("aria-label", "Finalizar pedido com a Ghost Shop");
+}
+
 function renderPayPalButtons() {
   const container = document.querySelector("#paypal-button-container");
   if (!container || !window.paypal) return Promise.reject(new Error("PayPal não foi carregado."));
@@ -535,7 +577,7 @@ function renderPayPalButtons() {
         throw new Error("Carrinho vazio.");
       }
 
-      setPayPalStatus("Criando pedido na API local do PayPal...");
+      setPayPalStatus("Criando pedido no PayPal...");
 
       return fetch(`${PAYPAL_API_BASE}/create-order.php`, {
         method: "POST",
@@ -585,12 +627,12 @@ function renderPayPalButtons() {
 
     onError(error) {
       console.error("Erro no pagamento PayPal:", error);
-      setPayPalStatus("Ocorreu um problema no pagamento. Confira a pasta /paypal e tente novamente.", "error");
+      setPayPalStatus("Ocorreu um problema no pagamento. Verifique se o XAMPP esta ativo e tente novamente.", "error");
     }
   }).render("#paypal-button-container")
     .then(() => {
       paypalButtonsRendered = true;
-      setPayPalStatus("Botões PayPal prontos usando a pasta local /paypal.");
+      setPayPalStatus("PayPal pronto para finalizar o pedido.");
     });
 }
 
@@ -601,6 +643,11 @@ function handleCheckout() {
 
   if (summary.totalItems === 0) {
     alert("Adicione produtos ao carrinho antes de pagar com PayPal.");
+    return;
+  }
+
+  if (!canUseLocalPayPalBackend()) {
+    openContactCheckout(summary);
     return;
   }
 
@@ -615,7 +662,7 @@ function handleCheckout() {
     .then(renderPayPalButtons)
     .catch((error) => {
       console.error("Erro ao carregar PayPal:", error);
-      setPayPalStatus("Não foi possível carregar o SDK do PayPal. Verifique se o XAMPP e a pasta /paypal estão funcionando.", "error");
+      setPayPalStatus("Nao foi possivel carregar o PayPal. Verifique se o XAMPP esta ativo e tente novamente.", "error");
     });
 }
 
@@ -625,6 +672,7 @@ function setupCatalogPage() {
   renderCategoryFilters();
   renderProducts();
   renderCart();
+  setupCheckoutMode();
 
   document.querySelector("#searchInput").addEventListener("input", renderProducts);
   document.querySelector("#categoryFilter").addEventListener("change", (event) => {
