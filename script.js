@@ -368,7 +368,7 @@ function updateCartQuantity(productId, quantity) {
   saveCart(updatedCart);
 }
 
-// Atualiza o painel lateral e mantem o total sincronizado com o LocalStorage.
+// Atualiza o painel lateral e mantem o total sincronizado.
 function renderCart() {
   const cartItems = document.querySelector("#cartItems");
   const cartTotal = document.querySelector("#cartTotal");
@@ -732,7 +732,7 @@ function setupSignupForm() {
     });
     writeStorage(SIGNUP_KEY, signups);
     form.reset();
-    document.querySelector("#signupFeedback").textContent = "Cadastro salvo no LocalStorage.";
+    document.querySelector("#signupFeedback").textContent = "Cadastro enviado com sucesso.";
   });
 }
 
