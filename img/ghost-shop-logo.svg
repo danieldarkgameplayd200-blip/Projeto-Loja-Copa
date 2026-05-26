@@ -1,9 +1,0 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" fill="#030305"/>
-  <path d="M256 28L438 108L484 302L358 470H154L28 302L74 108L256 28Z" fill="#090610" stroke="#9b5cff" stroke-width="8"/>
-  <path d="M168 252C168 166 202 97 256 97C310 97 344 166 344 252V328C344 350 319 360 303 345L286 329L269 345C261 353 251 353 243 345L226 329L209 345C193 360 168 350 168 328V252Z" fill="#10091d" stroke="#d4b7ff" stroke-width="7"/>
-  <path d="M218 233C231 214 247 214 260 233C245 242 231 242 218 233Z" fill="#ffffff"/>
-  <path d="M294 233C281 214 265 214 252 233C267 242 281 242 294 233Z" fill="#ffffff"/>
-  <text x="256" y="405" text-anchor="middle" font-family="Impact, Arial Black, sans-serif" font-size="74" fill="#eeeeee" stroke="#05030a" stroke-width="4" letter-spacing="3">GHOST</text>
-  <text x="256" y="456" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" fill="#c7a8ff" letter-spacing="10">SHOP</text>
-</svg>
