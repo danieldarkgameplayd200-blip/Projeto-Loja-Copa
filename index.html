@@ -159,6 +159,18 @@
                 <div><dt>Disponível</dt><dd id="modalStock"></dd></div>
                 <div><dt>Fonte da imagem</dt><dd id="modalSource"></dd></div>
               </dl>
+              <div class="modal-buy-box">
+                <label for="modalQuantity">Quantidade</label>
+                <div class="quantity-control modal-quantity" id="modalQuantityControls" aria-label="Selecionar quantidade do produto">
+                  <button type="button" data-action="decrease-modal" aria-label="Diminuir quantidade">
+                    <i data-lucide="minus" aria-hidden="true"></i>
+                  </button>
+                  <input id="modalQuantity" class="quantity-input" type="number" min="1" value="1" inputmode="numeric">
+                  <button type="button" data-action="increase-modal" aria-label="Aumentar quantidade">
+                    <i data-lucide="plus" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
               <button class="btn btn-primary w-100" id="modalAddButton">
                 <i data-lucide="shopping-bag" aria-hidden="true"></i>
                 Adicionar ao carrinho

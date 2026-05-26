@@ -304,6 +304,13 @@ a {
   background: var(--surface-strong);
 }
 
+.toolbar .form-label,
+.quantity-row label,
+.modal-buy-box label {
+  color: var(--ink);
+  font-weight: 800;
+}
+
 .form-control,
 .form-select,
 .input-group-text {
@@ -420,7 +427,7 @@ a {
 
 .product-body {
   display: flex;
-  min-height: 330px;
+  min-height: 410px;
   flex-direction: column;
   padding: 1.15rem;
 }
@@ -473,6 +480,65 @@ a {
   font-size: 0.9rem;
 }
 
+.quantity-row {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.25rem;
+}
+
+.quantity-control {
+  display: grid;
+  grid-template-columns: 46px minmax(64px, 1fr) 46px;
+  min-height: 46px;
+  overflow: hidden;
+  border: 1px solid rgba(155, 92, 255, 0.35);
+  border-radius: 8px;
+  background: #0e0a15;
+}
+
+.quantity-control button,
+.quantity-control input {
+  min-width: 0;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+}
+
+.quantity-control button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--field-dark);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.quantity-control button:hover,
+.quantity-control button:focus-visible {
+  color: #ffffff;
+  background: rgba(155, 92, 255, 0.32);
+  outline: none;
+}
+
+.quantity-control svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.quantity-control input {
+  width: 100%;
+  font-weight: 900;
+  text-align: center;
+  border-inline: 1px solid rgba(155, 92, 255, 0.22);
+  -moz-appearance: textfield;
+}
+
+.quantity-control input::-webkit-outer-spin-button,
+.quantity-control input::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
 .product-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -495,6 +561,7 @@ a {
 .cart-panel {
   color: #ffffff;
   background: #090610;
+  width: min(100%, 460px) !important;
 }
 
 .cart-panel .offcanvas-header {
@@ -508,8 +575,8 @@ a {
 
 .cart-item {
   display: grid;
-  grid-template-columns: 78px 1fr;
-  gap: 0.9rem;
+  grid-template-columns: 88px 1fr;
+  gap: 1rem;
   padding: 0.85rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
@@ -517,8 +584,8 @@ a {
 }
 
 .cart-item img {
-  width: 78px;
-  height: 78px;
+  width: 88px;
+  height: 88px;
   border-radius: 8px;
   object-fit: contain;
   background: #202a26;
@@ -537,20 +604,16 @@ a {
 }
 
 .cart-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.65rem;
   align-items: center;
 }
 
-.cart-controls input {
-  width: 78px;
-  min-height: 38px;
-  border: 0;
-  border-radius: 8px;
-  color: var(--ink);
-  background: #1d1529;
-  text-align: center;
+.cart-quantity {
+  grid-template-columns: 42px 62px 42px;
+  width: max-content;
+  min-height: 40px;
 }
 
 .cart-summary {
@@ -613,6 +676,21 @@ a {
   margin: 0;
   text-align: right;
   font-weight: 800;
+}
+
+.modal-buy-box {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1.2rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(155, 92, 255, 0.26);
+  border-radius: 8px;
+  background: rgba(155, 92, 255, 0.09);
+}
+
+.modal-quantity {
+  grid-template-columns: 52px minmax(82px, 1fr) 52px;
+  max-width: 260px;
 }
 
 .feature-image {
@@ -740,6 +818,10 @@ a {
   .values-section {
     padding: 2rem;
   }
+
+  .product-body {
+    min-height: 390px;
+  }
 }
 
 @media (max-width: 575px) {
@@ -761,6 +843,30 @@ a {
     padding: 1.25rem;
   }
 
+  .toolbar {
+    padding: 0.85rem;
+  }
+
+  .category-pills {
+    flex-wrap: nowrap;
+    margin-inline: -0.25rem;
+    padding: 0.1rem 0.25rem 0.35rem;
+    overflow-x: auto;
+  }
+
+  .category-pill {
+    flex: 0 0 auto;
+  }
+
+  .product-body {
+    min-height: auto;
+  }
+
+  .quantity-control {
+    grid-template-columns: 52px minmax(72px, 1fr) 52px;
+    min-height: 52px;
+  }
+
   .product-actions {
     grid-template-columns: 1fr;
   }
@@ -770,11 +876,29 @@ a {
   }
 
   .cart-item {
-    grid-template-columns: 64px 1fr;
+    grid-template-columns: 72px 1fr;
   }
 
   .cart-item img {
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
+  }
+
+  .cart-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-quantity {
+    width: 100%;
+    grid-template-columns: 52px 1fr 52px;
+    min-height: 48px;
+  }
+
+  .cart-controls .btn {
+    min-height: 44px;
+  }
+
+  .modal-quantity {
+    max-width: none;
   }
 }

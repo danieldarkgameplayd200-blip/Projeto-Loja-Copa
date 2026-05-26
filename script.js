@@ -224,6 +224,29 @@ function findProduct(productId) {
   return products.find((product) => product.id === Number(productId));
 }
 
+function clampProductQuantity(productId, quantity) {
+  const product = findProduct(productId);
+  const max = product ? product.stock : 1;
+  const parsedQuantity = Number(quantity) || 1;
+  return Math.max(1, Math.min(parsedQuantity, max));
+}
+
+function setQuantityValue(input, quantity) {
+  if (!input) return 1;
+
+  const productId = input.dataset.id;
+  const cleanQuantity = clampProductQuantity(productId, quantity);
+  input.value = cleanQuantity;
+  return cleanQuantity;
+}
+
+function changeQuantityInput(productId, delta, selector) {
+  const input = document.querySelector(`${selector}[data-id="${productId}"]`);
+  if (!input) return 1;
+
+  return setQuantityValue(input, (Number(input.value) || 1) + delta);
+}
+
 // Cria os filtros de categoria em select e em botoes para navegacao rapida.
 function renderCategoryFilters() {
   const select = document.querySelector("#categoryFilter");
@@ -280,13 +303,25 @@ function renderProducts() {
             <span class="product-price">${formatCurrency(product.price)}</span>
             <span class="text-muted">${product.stock} disponíveis</span>
           </div>
+          <div class="quantity-row">
+            <label for="qty-${product.id}">Quantidade</label>
+            <div class="quantity-control" aria-label="Selecionar quantidade de ${product.name}">
+              <button type="button" data-action="decrease-select" data-id="${product.id}" aria-label="Diminuir quantidade">
+                <i data-lucide="minus" aria-hidden="true"></i>
+              </button>
+              <input id="qty-${product.id}" class="quantity-input product-qty-input" type="number" min="1" max="${product.stock}" value="1" data-id="${product.id}" inputmode="numeric">
+              <button type="button" data-action="increase-select" data-id="${product.id}" aria-label="Aumentar quantidade">
+                <i data-lucide="plus" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
           <div class="product-actions">
             <button class="btn btn-outline-primary" type="button" data-action="details" data-id="${product.id}">
               <i data-lucide="info" aria-hidden="true"></i>
               Detalhes
             </button>
             <button class="btn btn-primary" type="button" data-action="add" data-id="${product.id}">
-              <i data-lucide="plus" aria-hidden="true"></i>
+              <i data-lucide="shopping-cart" aria-hidden="true"></i>
               Adicionar
             </button>
           </div>
@@ -364,7 +399,15 @@ function renderCart() {
         <h3>${product.name}</h3>
         <p>${formatCurrency(product.price)} cada</p>
         <div class="cart-controls">
-          <input type="number" min="1" max="${product.stock}" value="${quantity}" data-action="quantity" data-id="${product.id}" aria-label="Quantidade de ${product.name}">
+          <div class="quantity-control cart-quantity" aria-label="Quantidade de ${product.name}">
+            <button type="button" data-action="decrease-cart" data-id="${product.id}" aria-label="Diminuir quantidade">
+              <i data-lucide="minus" aria-hidden="true"></i>
+            </button>
+            <input type="number" min="1" max="${product.stock}" value="${quantity}" data-action="quantity" data-id="${product.id}" inputmode="numeric" aria-label="Quantidade de ${product.name}">
+            <button type="button" data-action="increase-cart" data-id="${product.id}" aria-label="Aumentar quantidade">
+              <i data-lucide="plus" aria-hidden="true"></i>
+            </button>
+          </div>
           <button class="btn btn-sm btn-outline-light" type="button" data-action="remove" data-id="${product.id}">
             <i data-lucide="trash-2" aria-hidden="true"></i>
             Remover
@@ -391,6 +434,10 @@ function openProductModal(productId) {
   document.querySelector("#modalColor").textContent = product.color;
   document.querySelector("#modalStock").textContent = `${product.stock} unidades`;
   document.querySelector("#modalSource").textContent = product.source;
+  const modalQuantityInput = document.querySelector("#modalQuantity");
+  modalQuantityInput.value = 1;
+  modalQuantityInput.max = product.stock;
+  modalQuantityInput.dataset.id = product.id;
   document.querySelector("#modalAddButton").dataset.id = product.id;
 
   const modalElement = document.querySelector("#productModal");
@@ -599,13 +646,45 @@ function setupCatalogPage() {
     const button = event.target.closest("[data-action]");
     if (!button) return;
 
-    if (button.dataset.action === "add") addToCart(button.dataset.id);
+    if (button.dataset.action === "decrease-select") {
+      changeQuantityInput(button.dataset.id, -1, ".product-qty-input");
+    }
+
+    if (button.dataset.action === "increase-select") {
+      changeQuantityInput(button.dataset.id, 1, ".product-qty-input");
+    }
+
+    if (button.dataset.action === "add") {
+      const quantityInput = document.querySelector(`.product-qty-input[data-id="${button.dataset.id}"]`);
+      addToCart(button.dataset.id, setQuantityValue(quantityInput, quantityInput?.value));
+    }
+
     if (button.dataset.action === "details") openProductModal(button.dataset.id);
   });
 
+  document.querySelector("#productsGrid").addEventListener("change", (event) => {
+    if (event.target.classList.contains("product-qty-input")) {
+      setQuantityValue(event.target, event.target.value);
+    }
+  });
+
   document.querySelector("#cartItems").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-action='remove']");
-    if (button) removeFromCart(button.dataset.id);
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+
+    if (button.dataset.action === "remove") {
+      removeFromCart(button.dataset.id);
+    }
+
+    if (button.dataset.action === "decrease-cart") {
+      const cartItem = getCart().find((item) => item.id === Number(button.dataset.id));
+      updateCartQuantity(button.dataset.id, (cartItem?.quantity || 1) - 1);
+    }
+
+    if (button.dataset.action === "increase-cart") {
+      const cartItem = getCart().find((item) => item.id === Number(button.dataset.id));
+      updateCartQuantity(button.dataset.id, (cartItem?.quantity || 1) + 1);
+    }
   });
 
   document.querySelector("#cartItems").addEventListener("change", (event) => {
@@ -614,8 +693,22 @@ function setupCatalogPage() {
     }
   });
 
+  document.querySelector("#modalQuantityControls").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+
+    const quantityInput = document.querySelector("#modalQuantity");
+    const delta = button.dataset.action === "decrease-modal" ? -1 : 1;
+    setQuantityValue(quantityInput, (Number(quantityInput.value) || 1) + delta);
+  });
+
+  document.querySelector("#modalQuantity").addEventListener("change", (event) => {
+    setQuantityValue(event.target, event.target.value);
+  });
+
   document.querySelector("#modalAddButton").addEventListener("click", (event) => {
-    addToCart(event.currentTarget.dataset.id);
+    const quantityInput = document.querySelector("#modalQuantity");
+    addToCart(event.currentTarget.dataset.id, setQuantityValue(quantityInput, quantityInput.value));
   });
 
   document.querySelector("#paypalButton").addEventListener("click", handleCheckout);
