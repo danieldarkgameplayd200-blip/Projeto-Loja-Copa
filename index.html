@@ -28,11 +28,17 @@
         <button class="btn btn-cart ms-lg-3 mt-3 mt-lg-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas" aria-controls="cartOffcanvas">
           <i data-lucide="shopping-cart" aria-hidden="true"></i>
           Carrinho
-          <span class="badge text-bg-warning ms-1" id="cartBadge">0</span>
+          <span class="badge text-bg-warning ms-1 cart-badge">0</span>
         </button>
       </div>
     </div>
   </nav>
+
+  <button class="floating-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas" aria-controls="cartOffcanvas" aria-label="Abrir carrinho">
+    <i data-lucide="shopping-cart" aria-hidden="true"></i>
+    <span>Carrinho</span>
+    <span class="floating-cart-count cart-badge">0</span>
+  </button>
 
   <header class="hero-section">
     <div class="container hero-layout">

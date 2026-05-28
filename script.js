@@ -372,8 +372,8 @@ function updateCartQuantity(productId, quantity) {
 function renderCart() {
   const cartItems = document.querySelector("#cartItems");
   const cartTotal = document.querySelector("#cartTotal");
-  const cartBadge = document.querySelector("#cartBadge");
-  if (!cartItems || !cartTotal || !cartBadge) return;
+  const cartBadges = document.querySelectorAll(".cart-badge");
+  if (!cartItems || !cartTotal) return;
 
   const cart = getCart();
   const detailedItems = cart
@@ -383,7 +383,9 @@ function renderCart() {
   const totalItems = detailedItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = detailedItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
-  cartBadge.textContent = totalItems;
+  cartBadges.forEach((badge) => {
+    badge.textContent = totalItems;
+  });
   cartTotal.textContent = formatCurrency(totalPrice);
 
   if (detailedItems.length === 0) {
