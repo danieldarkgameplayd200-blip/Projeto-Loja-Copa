@@ -22,9 +22,12 @@ html {
   scroll-behavior: smooth;
   width: 100%;
   overflow-x: hidden;
+  background: #05040a;
 }
 
 body {
+  position: relative;
+  z-index: 0;
   width: 100%;
   min-height: 100vh;
   margin: 0;
@@ -33,12 +36,21 @@ body {
   letter-spacing: 0;
   overflow-x: hidden;
   background:
-    linear-gradient(180deg, rgba(4, 3, 8, 0.95), rgba(18, 8, 34, 0.93)),
-    radial-gradient(circle at 16% 12%, rgba(155, 92, 255, 0.32), transparent 34rem),
-    radial-gradient(circle at 90% 28%, rgba(199, 168, 255, 0.2), transparent 28rem),
-    url("img/Logo%20copa.png") center 8rem / min(88vw, 940px) no-repeat fixed,
-    url("img/produtos/bola-trionda-pro-2026-adidas.png") right -7rem top 8rem / min(45vw, 540px) no-repeat fixed,
-    #05040a;
+    linear-gradient(180deg, rgba(4, 3, 8, 0.72), rgba(18, 8, 34, 0.78)),
+    radial-gradient(circle at 18% 12%, rgba(33, 116, 255, 0.22), transparent 34rem),
+    radial-gradient(circle at 86% 20%, rgba(155, 92, 255, 0.24), transparent 32rem),
+    linear-gradient(90deg, rgba(2, 9, 26, 0.56), rgba(16, 6, 28, 0.68));
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+  background: url("img/fundo-campo.jpg") center / cover no-repeat;
+  filter: saturate(1.45) contrast(1.08) brightness(0.82);
+  opacity: 0.4;
 }
 
 img {
@@ -889,24 +901,6 @@ a {
 }
 
 @media (max-width: 991px) {
-  body {
-    background-size:
-      auto,
-      auto,
-      auto,
-      min(118vw, 760px),
-      min(72vw, 420px),
-      auto;
-    background-position:
-      center,
-      16% 12%,
-      90% 28%,
-      center 7rem,
-      right -8rem top 9rem,
-      center;
-    background-attachment: scroll;
-  }
-
   .container {
     width: min(100% - 28px, 720px);
     max-width: 720px;
@@ -1033,23 +1027,6 @@ a {
 }
 
 @media (max-width: 575px) {
-  body {
-    background-size:
-      auto,
-      auto,
-      auto,
-      min(150vw, 620px),
-      min(82vw, 360px),
-      auto;
-    background-position:
-      center,
-      12% 10%,
-      86% 30%,
-      center 6rem,
-      right -9rem top 8rem,
-      center;
-  }
-
   .container,
   .app-navbar .container {
     width: min(100% - 24px, 100%);
